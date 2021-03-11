@@ -1,0 +1,55 @@
+#!/bin/bash
+############################
+# Author: Ryan Cook
+# Description: Put the most recent logs from each logfile in one file
+# March 10, 2021
+#
+DAY=$(date +%D)
+TIME=$(date +%T)
+HOSTNAME=$(hostname -s)
+IP=$(curl ipinfo.io/ip)
+LOG_DIR=/var/log/
+PORTS=$(netstat -tunlp)
+
+# LOGS
+SSH_LOG=$(tail ${LOG_DIR}auth.log)
+SYS_LOG=$(tail ${LOG_DIR}syslog)
+PHP_LOG=$(tail ${LOG_DIR}php7.4-fpm.log)
+APACHE_LOG=$(tail ${LOG_DIR}apache2/*_error.log)
+APACHE_LOG2=$(tail ${LOG_DIR}apache2/error.log)
+
+if [[ $EUID -ne 0 ]]; then
+    clear
+    echo "Script must be run as the root user..."
+    sleep 2
+    exit 3
+fi
+
+command -v curl 2> /dev/null
+    if [[ $? -ne 0 ]]; then
+        apt install curl -y
+    fi
+
+echo "
+##################################
+${DAY}, ${TIME}
+##################################
+${HOSTNAME}, ${IP}
+##################################
+
+----LISTENING PORTS----
+
+
+----SSH SERVER----
+${SSH_LOG}
+
+----SYSTEM LOG----
+${SYS_LOG}
+
+----PHP-FPM----
+${PHP_LOG}
+
+----APACHE LOG----
+${APACHE_LOG}
+
+${APACHE_LOG2}">>logfiles.txt
